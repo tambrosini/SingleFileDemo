@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Dashboard</title>
+    <!-- 
+    SETUP INSTRUCTIONS:
+    
+    1. Start the match dashboard service:
+       cd Microservices
+       dotnet run --project match-dashboard-service.cs
+    
+    2. If you get CORS errors, serve this HTML file from a local web server:
+       Option A: python -m http.server 8080
+       Option B: npx serve .
+       Then open: http://localhost:8080/match-dashboard.html
+       
+    3. Or simply open this file directly in your browser (may have CORS issues)
+    -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group label {
+            font-weight: 500;
+        }
+
+        .input-group input {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-size: 16px;
+            width: 100px;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #7f8c8d;
+            font-size: 18px;
+        }
+
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+            white-space: pre-line;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .match-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .info-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #3498db;
+        }
+
+        .info-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #7f8c8d;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .teams-section {
+            margin-top: 40px;
+        }
+
+        .teams-container {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .team-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border-top: 5px solid #27ae60;
+        }
+
+        .team-header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .team-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .vs-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #95a5a6;
+            background: #ecf0f1;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            margin: auto;
+        }
+
+        .lineup-section {
+            margin-bottom: 25px;
+        }
+
+        .lineup-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #e8f4fd;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .player-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .player {
+            display: grid;
+            grid-template-columns: 40px 1fr auto;
+            gap: 10px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border-left: 3px solid #3498db;
+            align-items: center;
+        }
+
+        .player-number {
+            background: #3498db;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .player-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .player-position {
+            background: #ecf0f1;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .officials-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #9b59b6;
+            margin-top: 30px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-scheduled { background: #3498db; color: white; }
+        .status-pre-match { background: #f39c12; color: white; }
+        .status-first-half { background: #27ae60; color: white; }
+        .status-half-time { background: #e67e22; color: white; }
+        .status-second-half { background: #27ae60; color: white; }
+        .status-full-time { background: #95a5a6; color: white; }
+        .status-postponed { background: #e74c3c; color: white; }
+
+        @media (max-width: 768px) {
+            .teams-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .vs-divider {
+                order: -1;
+                margin: 20px auto;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚽ Match Dashboard</h1>
+            <div class="controls">
+                <div class="input-group">
+                    <label for="matchId">Match ID:</label>
+                    <input type="number" id="matchId" placeholder="e.g. 1" value="1" min="1">
+                </div>
+                <button class="btn" id="loadMatchBtn" onclick="loadMatchData()">
+                    🔄 Load Match Data
+                </button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="loadingMessage" class="loading" style="display: none;">
+                Loading match data... ⏳
+            </div>
+
+            <div id="errorMessage" class="error" style="display: none;"></div>
+
+            <div id="matchData" style="display: none;">
+                <!-- Match info will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadMatchData() {
+            const matchId = document.getElementById('matchId').value;
+            
+            if (!matchId || matchId < 1) {
+                showError('Please enter a valid match ID (1 or greater)');
+                return;
+            }
+
+            const loadBtn = document.getElementById('loadMatchBtn');
+            const loadingMessage = document.getElementById('loadingMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            const matchData = document.getElementById('matchData');
+
+            // Show loading state
+            loadBtn.disabled = true;
+            loadBtn.textContent = '⏳ Loading...';
+            loadingMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+            matchData.style.display = 'none';
+
+            try {
+                const response = await fetch(`http://localhost:5001/matches/${matchId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                displayMatchData(data);
+
+            } catch (error) {
+                console.error('Error loading match data:', error);
+                
+                let errorMessage = 'Failed to load match data: ';
+                
+                if (error.name === 'TypeError' && error.message.includes('NetworkError')) {
+                    errorMessage += 'CORS error or network issue. This usually happens when:\n\n' +
+                                  '1. The match dashboard service is not running on http://localhost:5001\n' +
+                                  '2. The service needs to enable CORS headers\n' +
+                                  '3. You\'re opening this page as a file:// instead of serving it from a web server\n\n' +
+                                  'Try running: dotnet run in the Microservices folder to start the service, ' +
+                                  'or serve this HTML file from a local web server.';
+                } else if (error.name === 'TypeError') {
+                    errorMessage += 'Network error - cannot reach the service. Make sure the match dashboard service is running on http://localhost:5001';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                showError(errorMessage);
+            } finally {
+                // Reset loading state
+                loadBtn.disabled = false;
+                loadBtn.textContent = '🔄 Load Match Data';
+                loadingMessage.style.display = 'none';
+            }
+        }
+
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            document.getElementById('matchData').style.display = 'none';
+        }
+
+        function displayMatchData(data) {
+            const matchDataDiv = document.getElementById('matchData');
+            
+            const statusClass = `status-${data.matchStatus.toLowerCase().replace(' ', '-')}`;
+            
+            matchDataDiv.innerHTML = `
+                <div class="match-info">
+                    <div class="info-card">
+                        <h3>📋 Match Information</h3>
+                        <div class="info-item">
+                            <span class="info-label">Match ID:</span>
+                            <span class="info-value">${data.matchId}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Status:</span>
+                            <span class="info-value"><span class="status-badge ${statusClass}">${data.matchStatus}</span></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Last Updated:</span>
+                            <span class="info-value">${new Date(data.lastUpdated).toLocaleString()}</span>
+                        </div>
+                    </div>
+
+                    ${data.fixture ? `
+                    <div class="info-card">
+                        <h3>🏟️ Fixture Details</h3>
+                        <div class="info-item">
+                            <span class="info-label">Fixture ID:</span>
+                            <span class="info-value">${data.fixture.id}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Venue:</span>
+                            <span class="info-value">${data.fixture.venue}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Date:</span>
+                            <span class="info-value">${new Date(data.fixture.date).toLocaleString()}</span>
+                        </div>
+                    </div>
+                    ` : '<div class="info-card"><h3>🏟️ Fixture Details</h3><p>No fixture information available</p></div>'}
+                </div>
+
+                ${data.teamSheet ? `
+                <div class="teams-section">
+                    <h2 style="text-align: center; margin-bottom: 30px; color: #2c3e50; font-size: 1.8rem;">👥 Team Sheets</h2>
+                    
+                    <div class="teams-container">
+                        <div class="team-card">
+                            <div class="team-header">
+                                <div class="team-name">🏠 ${data.teamSheet.homeTeam}</div>
+                                <small style="color: #7f8c8d;">Home Team</small>
+                            </div>
+                            
+                            <div class="lineup-section">
+                                <div class="lineup-title">Starting XI</div>
+                                <div class="player-list">
+                                    ${data.teamSheet.homeStartingLineup.map(player => `
+                                        <div class="player">
+                                            <div class="player-number">${player.number}</div>
+                                            <div class="player-name">${player.name} (${player.age})</div>
+                                            <div class="player-position">${player.position}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            ${data.teamSheet.homeSubstitutes.length > 0 ? `
+                            <div class="lineup-section">
+                                <div class="lineup-title">Substitutes</div>
+                                <div class="player-list">
+                                    ${data.teamSheet.homeSubstitutes.map(player => `
+                                        <div class="player">
+                                            <div class="player-number">${player.number}</div>
+                                            <div class="player-name">${player.name} (${player.age})</div>
+                                            <div class="player-position">${player.position}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="vs-divider">VS</div>
+
+                        <div class="team-card">
+                            <div class="team-header">
+                                <div class="team-name">✈️ ${data.teamSheet.awayTeam}</div>
+                                <small style="color: #7f8c8d;">Away Team</small>
+                            </div>
+                            
+                            <div class="lineup-section">
+                                <div class="lineup-title">Starting XI</div>
+                                <div class="player-list">
+                                    ${data.teamSheet.awayStartingLineup.map(player => `
+                                        <div class="player">
+                                            <div class="player-number">${player.number}</div>
+                                            <div class="player-name">${player.name} (${player.age})</div>
+                                            <div class="player-position">${player.position}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            ${data.teamSheet.awaySubstitutes.length > 0 ? `
+                            <div class="lineup-section">
+                                <div class="lineup-title">Substitutes</div>
+                                <div class="player-list">
+                                    ${data.teamSheet.awaySubstitutes.map(player => `
+                                        <div class="player">
+                                            <div class="player-number">${player.number}</div>
+                                            <div class="player-name">${player.name} (${player.age})</div>
+                                            <div class="player-position">${player.position}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                ${data.teamSheet.officials ? `
+                <div class="officials-card">
+                    <h3>👨‍⚖️ Match Officials</h3>
+                    <div class="info-item">
+                        <span class="info-label">Referee:</span>
+                        <span class="info-value">${data.teamSheet.officials.referee}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Assistant Referee 1:</span>
+                        <span class="info-value">${data.teamSheet.officials.assistantReferee1}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Assistant Referee 2:</span>
+                        <span class="info-value">${data.teamSheet.officials.assistantReferee2}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Fourth Official:</span>
+                        <span class="info-value">${data.teamSheet.officials.fourthOfficial}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Assignment Date:</span>
+                        <span class="info-value">${new Date(data.teamSheet.officials.assignmentDate).toLocaleString()}</span>
+                    </div>
+                </div>
+                ` : ''}
+                ` : '<div class="info-card"><h3>👥 Team Sheet</h3><p>No team sheet information available</p></div>'}
+            `;
+
+            document.getElementById('errorMessage').style.display = 'none';
+            matchDataDiv.style.display = 'block';
+        }
+
+        // Allow Enter key to trigger load
+        document.getElementById('matchId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loadMatchData();
+            }
+        });
+    </script>
+</body>
+</html>

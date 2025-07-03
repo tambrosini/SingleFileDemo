@@ -1,0 +1,29 @@
+Football score app
+
+Main service endpoint gets "todays game"
+
+Service 1: Match Dashboard Service
+
+Endpoint: GET /matches/{matchId}
+Provides complete match information for the UI
+Calls Service 2 (Fixture) and Service 3 (Team Sheets)
+
+Service 2: Fixture Service
+
+Endpoint: GET /fixtures/{matchId}
+Returns basic match details (teams, date, venue, competition)
+Standalone service (called by Service 1)
+
+Service 3: Team Sheets Service
+
+Endpoint: GET /teamsheets/{matchId}
+Provides starting lineups and substitutes
+Calls Service 4 (Officials) to get referee/assistant info
+
+Service 4: Officials Service
+
+Endpoint: GET /officials/{matchId}
+Returns referee and assistant referee assignments
+Called by Service 3
+
+Flow: User requests match dashboard → Dashboard Service gets fixture info & team sheets → Team Sheets Service gets officials data → complete match preview returned
