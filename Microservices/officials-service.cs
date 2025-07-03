@@ -13,7 +13,7 @@ var app = builder.Build();
 
 app.MapGet("/officials/{matchId:int}", (int matchId, ILogger<Program> logger) => 
 {
-    logger.LogWarning("Officials request received for matchId: {MatchId}", matchId);
+    logger.LogInformation("Officials request received for matchId: {MatchId}", matchId);
     
     var officials = new Officials
     {
@@ -25,12 +25,16 @@ app.MapGet("/officials/{matchId:int}", (int matchId, ILogger<Program> logger) =>
         AssignmentDate = DateTime.Now.AddDays(-7) // Assigned a week ago
     };
     
-    logger.LogWarning("Officials data generated successfully for matchId: {MatchId}", matchId);
+    logger.LogInformation("Officials data generated successfully for matchId: {MatchId}", matchId);
     return Results.Ok(officials);
 });
 
 // Get URL from configuration
 var baseUrl = app.Configuration["RefereeService:BaseUrl"];
+
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("Officials Service is running at {BaseUrl}", baseUrl);
+
 app.Run(baseUrl);
 
 public class Officials

@@ -30,7 +30,7 @@ app.MapGet("/matches/{matchId:int}", async (int matchId, HttpClient httpClient, 
 {
     try
     {
-        logger.LogWarning("Match dashboard request initiated for matchId: {MatchId}", matchId);
+        logger.LogInformation("Match dashboard request initiated for matchId: {MatchId}", matchId);
         
         // Get fixture information from the Fixture Service
         var fixture = await GetFixtureAsync(matchId, httpClient, configuration, logger);
@@ -48,7 +48,7 @@ app.MapGet("/matches/{matchId:int}", async (int matchId, HttpClient httpClient, 
             LastUpdated = DateTime.Now
         };
         
-        logger.LogWarning("Match dashboard request completed successfully for matchId: {MatchId}", matchId);
+        logger.LogInformation("Match dashboard request completed successfully for matchId: {MatchId}", matchId);
         return Results.Ok(matchDashboard);
     }
     catch (Exception ex)
@@ -60,6 +60,10 @@ app.MapGet("/matches/{matchId:int}", async (int matchId, HttpClient httpClient, 
 
 // Get URL from configuration
 var baseUrl = app.Configuration["MatchService:BaseUrl"];
+
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("Match Dashboard Service is running at {BaseUrl}", baseUrl);
+
 app.Run(baseUrl);
 
 static async Task<Fixture?> GetFixtureAsync(int matchId, HttpClient httpClient, IConfiguration configuration, ILogger logger)
@@ -67,13 +71,13 @@ static async Task<Fixture?> GetFixtureAsync(int matchId, HttpClient httpClient, 
     var fixtureBaseUrl = configuration["FixtureService:BaseUrl"];
     var url = $"{fixtureBaseUrl}/fixture/{matchId}";
     
-    logger.LogWarning("Making API call to Fixture Service: {Url}", url);
+    logger.LogInformation("Making API call to Fixture Service: {Url}", url);
     var fixtureResponse = await httpClient.GetAsync(url);
     
     Fixture? fixture = null;
     if (fixtureResponse.IsSuccessStatusCode)
     {
-        logger.LogWarning("Fixture Service call successful for matchId: {MatchId}", matchId);
+        logger.LogInformation("Fixture Service call successful for matchId: {MatchId}", matchId);
         var fixtureJson = await fixtureResponse.Content.ReadAsStringAsync();
         fixture = System.Text.Json.JsonSerializer.Deserialize<Fixture>(fixtureJson, new System.Text.Json.JsonSerializerOptions
         {
@@ -82,7 +86,7 @@ static async Task<Fixture?> GetFixtureAsync(int matchId, HttpClient httpClient, 
     }
     else
     {
-        logger.LogWarning("Fixture Service call failed for matchId: {MatchId}, StatusCode: {StatusCode}", matchId, fixtureResponse.StatusCode);
+        logger.LogError("Fixture Service call failed for matchId: {MatchId}, StatusCode: {StatusCode}", matchId, fixtureResponse.StatusCode);
     }
     
     return fixture;
@@ -99,7 +103,7 @@ static async Task<TeamSheet?> GetTeamSheetAsync(int matchId, HttpClient httpClie
     TeamSheet? teamSheet = null;
     if (teamsheetResponse.IsSuccessStatusCode)
     {
-        logger.LogWarning("Teamsheet Service call successful for matchId: {MatchId}", matchId);
+        logger.LogInformation("Teamsheet Service call successful for matchId: {MatchId}", matchId);
         var teamsheetJson = await teamsheetResponse.Content.ReadAsStringAsync();
         teamSheet = System.Text.Json.JsonSerializer.Deserialize<TeamSheet>(teamsheetJson, new System.Text.Json.JsonSerializerOptions
         {
@@ -108,7 +112,7 @@ static async Task<TeamSheet?> GetTeamSheetAsync(int matchId, HttpClient httpClie
     }
     else
     {
-        logger.LogWarning("Teamsheet Service call failed for matchId: {MatchId}, StatusCode: {StatusCode}", matchId, teamsheetResponse.StatusCode);
+        logger.LogError("Teamsheet Service call failed for matchId: {MatchId}, StatusCode: {StatusCode}", matchId, teamsheetResponse.StatusCode);
     }
     
     return teamSheet;

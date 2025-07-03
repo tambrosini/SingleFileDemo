@@ -16,7 +16,7 @@ app.MapGet("/teamsheets/{matchId:int}", async (int matchId, HttpClient httpClien
 {
     try
     {
-        logger.LogWarning("Teamsheet request initiated for matchId: {MatchId}", matchId);
+        logger.LogInformation("Teamsheet request initiated for matchId: {MatchId}", matchId);
         
         // Get officials information from the Officials Service
         var officials = await GetOfficialsAsync(matchId, httpClient, configuration, logger);
@@ -35,7 +35,7 @@ app.MapGet("/teamsheets/{matchId:int}", async (int matchId, HttpClient httpClien
             MatchDate = DateTime.Now.AddDays(matchId % 30) // Spread matches across 30 days
         };
         
-        logger.LogWarning("Teamsheet request completed successfully for matchId: {MatchId}", matchId);
+        logger.LogInformation("Teamsheet request completed successfully for matchId: {MatchId}", matchId);
         return Results.Ok(teamSheet);
     }
     catch (Exception ex)
@@ -47,6 +47,10 @@ app.MapGet("/teamsheets/{matchId:int}", async (int matchId, HttpClient httpClien
 
 // Get URL from configuration
 var baseUrl = app.Configuration["TeemsheetService:BaseUrl"];
+
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("Teamsheet Service is running at {BaseUrl}", baseUrl);
+
 app.Run(baseUrl);
 
 static async Task<Officials?> GetOfficialsAsync(int matchId, HttpClient httpClient, IConfiguration configuration, ILogger logger)
@@ -60,7 +64,7 @@ static async Task<Officials?> GetOfficialsAsync(int matchId, HttpClient httpClie
     Officials? officials = null;
     if (officialsResponse.IsSuccessStatusCode)
     {
-        logger.LogWarning("Officials Service call successful for matchId: {MatchId}", matchId);
+        logger.LogInformation("Officials Service call successful for matchId: {MatchId}", matchId);
         var officialsJson = await officialsResponse.Content.ReadAsStringAsync();
         officials = System.Text.Json.JsonSerializer.Deserialize<Officials>(officialsJson, new System.Text.Json.JsonSerializerOptions
         {
@@ -69,7 +73,7 @@ static async Task<Officials?> GetOfficialsAsync(int matchId, HttpClient httpClie
     }
     else
     {
-        logger.LogWarning("Officials Service call failed for matchId: {MatchId}, StatusCode: {StatusCode}", matchId, officialsResponse.StatusCode);
+        logger.LogError("Officials Service call failed for matchId: {MatchId}, StatusCode: {StatusCode}", matchId, officialsResponse.StatusCode);
     }
     
     return officials;
