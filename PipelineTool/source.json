@@ -1,0 +1,20 @@
+{
+  "ApiSettings": {
+    "BaseUrl": "https://dev.api.example.com",
+    "Version": "v1",
+    "RateLimitPerMinute": 100,
+    "EnableHttpsRedirection": true
+  },
+  "Secrets": {
+    "DatabasePassword": "your-database-password-here",
+    "ApiKey": "your-api-key-here",
+    "JwtSecretKey": "your-jwt-secret-key-here",
+    "EncryptionKey": "your-encryption-key-here",
+    "ExternalServices": {
+      "EmailService": {
+        "ApiKey": "email-service-api-key",
+        "FromAddress": "noreply@example.com"
+      }
+    }
+  }
+}
