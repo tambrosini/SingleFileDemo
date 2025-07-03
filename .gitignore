@@ -1,0 +1,20 @@
+# Output files
+output.json
+
+# Build artifacts
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+
+# IDE files
+.vs/
+.vscode/
+*.suo
+*.user
+*.userprefs
+
+# OS files
+.DS_Store
+Thumbs.db
